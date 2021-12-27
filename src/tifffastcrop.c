@@ -951,12 +951,12 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 		      !(error = cpTiles2Strip(in,
 			    requestedxmin, requestedymin,
 			    requestedwidth, requestedlength,
-			    outbuf, outscanlinesizeinbytes, bytesperpixel))) ||
+			    outbuf, outscanlinesizeinbytes, bytesperpixel * 8))) ||
 		     (!TIFFIsTiled(in) &&
 		      !(error = cpStrips2Strip(in,
 			    requestedxmin, requestedymin,
 			    requestedwidth, requestedlength,
-			    outbuf, outscanlinesizeinbytes, bytesperpixel,
+			    outbuf, outscanlinesizeinbytes, bytesperpixel * 8,
 			    &y_of_last_read_scanline,
 			    inimagelength))))) {
 			if (verbose)
