@@ -1,8 +1,8 @@
 /* tiffsplittiles
 
- v. 1.4
+ v. 1.4.1
 
- Copyright (c) 2012-2017 Christophe Deroulers
+ Copyright (c) 2012-2021 Christophe Deroulers
 
  Portions are based on libtiff's tiffcp code. tiffcp is
  Copyright (c) 1988-1997 Sam Leffler
@@ -54,7 +54,7 @@ static void my_asprintf(char **ret, const char *format, ...)
 }
 
 
-static int searchNumberOfDigits(uint32 u)
+static int searchNumberOfDigits(uint32_t u)
 {
 return snprintf(NULL, 0, "%u", u);
 }
@@ -86,10 +86,10 @@ return prefix;
 
 static void copyOtherFields(TIFF* in, TIFF* out)
 { /* after tiffcp in libtiff's tiffsplit.c */
-  uint16 bitspersample, samplesperpixel, shortv, *shortav;
+  uint16_t bitspersample, samplesperpixel, shortv, *shortav;
   float floatv;
   char *stringv;
-  uint32 longv;
+  uint32_t longv;
 
   CopyField(TIFFTAG_SUBFILETYPE, longv);
   CopyField(TIFFTAG_BITSPERSAMPLE, bitspersample);
@@ -114,10 +114,10 @@ static void copyOtherFields(TIFF* in, TIFF* out)
   CopyField(TIFFTAG_TILEDEPTH, longv);
   CopyField(TIFFTAG_SAMPLEFORMAT, shortv);
   CopyField2(TIFFTAG_EXTRASAMPLES, shortv, shortav);
-  { uint16 *red, *green, *blue;
+  { uint16_t *red, *green, *blue;
     CopyField3(TIFFTAG_COLORMAP, red, green, blue);
   }
-  { uint16 shortv2;
+  { uint16_t shortv2;
     CopyField2(TIFFTAG_PAGENUMBER, shortv, shortv2);
   }
   CopyField(TIFFTAG_ARTIST, stringv);
@@ -177,11 +177,11 @@ TIFF* in;
 char* inpathbeforelastdot;
 int output_tiled_tiffs = 0, arg = 1;
 int number_digits_horiz_tile_numbers, number_digits_vert_tile_numbers;
-uint32 imagewidth, imagelength;
-uint32 tilewidth, tilelength;
-uint32 x, y;
-uint32 imagedepth;
-uint16 planarconfig, compression;
+uint32_t imagewidth, imagelength;
+uint32_t tilewidth, tilelength;
+uint32_t x, y;
+uint32_t imagedepth;
+uint16_t planarconfig, compression;
 tsize_t bufsize;
 tdata_t buf;
 int io_error= 0;
@@ -279,7 +279,7 @@ for (y = 0; y < imagelength; y += tilelength)
   {
   if (! io_error)
   {
-  uint32 outputimageslength= tilelength;
+  uint32_t outputimageslength= tilelength;
 
 fprintf(stderr, "Dealing with line " UINT32_FORMAT "/" UINT32_FORMAT
         " y=" UINT32_FORMAT " -> outputimageslength=" UINT32_FORMAT
@@ -291,8 +291,8 @@ fprintf(stderr, "Dealing with line " UINT32_FORMAT "/" UINT32_FORMAT
     {
     char * outpath;
     TIFF * out;
-    uint32 tilenumber= TIFFComputeTile(in, x, y, 0, 0);
-    uint32 outputimagewidth= tilewidth;
+    uint32_t tilenumber= TIFFComputeTile(in, x, y, 0, 0);
+    uint32_t outputimagewidth= tilewidth;
 
 /*fprintf(stderr, "Reading tile at (%u, %u), which has the number %u -> i%0*uj%0*u\n", 
         x, y, tilenumber, number_digits_horiz_tile_numbers,
@@ -331,9 +331,9 @@ fprintf(stderr, "Dealing with line " UINT32_FORMAT "/" UINT32_FORMAT
       }
     if (compression == COMPRESSION_JPEG)
       {
-      uint32 count = 0;
+      uint32_t count = 0;
       void *table = NULL;
-      uint16 subsamplinghor, subsamplingver;
+      uint16_t subsamplinghor, subsamplingver;
       if (TIFFGetField(in, TIFFTAG_JPEGTABLES, &count, &table)
           && count > 0 && table)
         TIFFSetField(out, TIFFTAG_JPEGTABLES, count, table);

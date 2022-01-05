@@ -1,6 +1,6 @@
 /* tiffmakemosaic
 
- v. 1.4
+ v. 1.4.1
 
  Copyright (c) 2012-2021 Christophe Deroulers
 
@@ -44,18 +44,18 @@
 
 static const char TIFF_SUFFIX[] = ".tif";
 static const char JPEG_SUFFIX[] = ".jpg";
-static uint64 mosaicpiecesize = 1 << 30; /* 1 GiB */
-static uint32 overlapinpixels = 0;
+static uint64_t mosaicpiecesize = 1 << 30; /* 1 GiB */
+static uint32_t overlapinpixels = 0;
 static long double overlapinpercent = 0;
-static uint32 requestedpiecewidth = 0;
-static uint32 requestedpiecelength = 0;
-static uint32 requestedpiecewidthdivisor = 0;
-static uint32 requestedpiecelengthdivisor = 0;
+static uint32_t requestedpiecewidth = 0;
+static uint32_t requestedpiecelength = 0;
+static uint32_t requestedpiecewidthdivisor = 0;
+static uint32_t requestedpiecelengthdivisor = 0;
 static int verbose = 0;
 static int dryrun = 0;
 static int paddinginx = 0;
 static int paddinginy = 0;
-static uint16 numberpaddingvalues = 0;
+static uint16_t numberpaddingvalues = 0;
 static char ** paddingvalues = NULL;
 
 
@@ -64,13 +64,13 @@ static char ** paddingvalues = NULL;
 #endif
 static int output_JPEG_files = TIFFMAKEMOSAIC_OUTPUTJPEGFILES;
 
-static uint32 defg3opts = (uint32) -1;
+static uint32_t defg3opts = (uint32_t) -1;
 static int quality = -1, default_quality = 75;            /* JPEG quality */
 static int jpegcolormode = JPEGCOLORMODE_RGB;
-static uint16 defcompression = (uint16) -1;
-static uint16 defpredictor = (uint16) -1;
+static uint16_t defcompression = (uint16_t) -1;
+static uint16_t defpredictor = (uint16_t) -1;
 static int defpreset = -1;
-/*static uint16 defphotometric = (uint16) -1;*/
+/*static uint16_t defphotometric = (uint16_t) -1;*/
 
 
 static void my_asprintf(char ** ret, const char * format, ...)
@@ -94,7 +94,7 @@ static void my_asprintf(char ** ret, const char * format, ...)
 }
 
 
-static char * photometricName(uint16 photometric)
+static char * photometricName(uint16_t photometric)
 {
 	char * s= NULL;
 	switch (photometric) {
@@ -115,7 +115,7 @@ static char * photometricName(uint16 photometric)
 }
 
 
-static int searchNumberOfDigits(uint32 u)
+static int searchNumberOfDigits(uint32_t u)
 {
 	return snprintf(NULL, 0, "%u", u);
 }
@@ -147,10 +147,10 @@ static char * searchPrefixBeforeLastDot(const char * path)
 static void
 tiffCopyFieldsButDimensions(TIFF* in, TIFF* out)
 {
-	uint16 bitspersample, samplesperpixel, compression, shortv, *shortav;
+	uint16_t bitspersample, samplesperpixel, compression, shortv, *shortav;
 	float floatv;
 	char *stringv;
-	uint32 longv;
+	uint32_t longv;
 
 	CopyField(TIFFTAG_SUBFILETYPE, longv);
 	CopyField(TIFFTAG_BITSPERSAMPLE, bitspersample);
@@ -175,10 +175,10 @@ tiffCopyFieldsButDimensions(TIFF* in, TIFF* out)
 	CopyField(TIFFTAG_TILEDEPTH, longv);
 	CopyField(TIFFTAG_SAMPLEFORMAT, shortv);
 	CopyField2(TIFFTAG_EXTRASAMPLES, shortv, shortav);
-	{ uint16 *red, *green, *blue;
+	{ uint16_t *red, *green, *blue;
 	    CopyField3(TIFFTAG_COLORMAP, red, green, blue);
 	}
-	{ uint16 shortv2;
+	{ uint16_t shortv2;
 	    CopyField2(TIFFTAG_PAGENUMBER, shortv, shortv2);
 	}
 	CopyField(TIFFTAG_ARTIST, stringv);
@@ -202,18 +202,18 @@ tiffCopyFieldsButDimensions(TIFF* in, TIFF* out)
 
 	/* cols resp. rows do not include rightpaddinginpixels resp. 
 	bottompadding */
-static void cpBufToBuf(uint8* out, uint8* in, uint8* paddingbytes,
-	uint32 rows, uint32 bottompadding, uint32 cols,
-	uint32 rightpaddinginpixels, uint16 bytesperpixel,
+static void cpBufToBuf(uint8_t* out, uint8_t* in, uint8_t* paddingbytes,
+	uint32_t rows, uint32_t bottompadding, uint32_t cols,
+	uint32_t rightpaddinginpixels, uint16_t bytesperpixel,
 	int outskew, int inskew)
 {
 	while (rows-- > 0) {
-		uint32 jb = cols * bytesperpixel;
-		uint32 jp = rightpaddinginpixels;
+		uint32_t jb = cols * bytesperpixel;
+		uint32_t jp = rightpaddinginpixels;
 		while (jb-- > 0)
 			*out++ = *in++;
 		while (jp-- > 0) {
-			uint16 k;
+			uint16_t k;
 			for (k = 0 ; k < bytesperpixel ; k++)
 				*out++ = paddingbytes[k];
 		}
@@ -221,9 +221,9 @@ static void cpBufToBuf(uint8* out, uint8* in, uint8* paddingbytes,
 		in += inskew;
 	}
 	while (bottompadding-- > 0) {
-		uint32 jp = cols + rightpaddinginpixels;
+		uint32_t jp = cols + rightpaddinginpixels;
 		while (jp-- > 0) {
-			uint32 k;
+			uint32_t k;
 			for (k = 0 ; k < bytesperpixel ; k++)
 				*out++ = paddingbytes[k];
 		}
@@ -234,11 +234,11 @@ static void cpBufToBuf(uint8* out, uint8* in, uint8* paddingbytes,
 
 static int testAndFixParameters(TIFF* in,
 	int output_to_jpeg_rather_than_tiff,
-	tsize_t* outscanlinesizeinbytes, uint32 width, TIFF* TIFFout,
-	uint16* input_compression, uint16* bytesperpixel)
+	tsize_t* outscanlinesizeinbytes, uint32_t width, TIFF* TIFFout,
+	uint16_t* input_compression, uint16_t* bytesperpixel)
 {
-	uint16 spp, bitspersample;
-	uint16 input_photometric, compression;
+	uint16_t spp, bitspersample;
+	uint16_t input_photometric, compression;
 
 	TIFFGetFieldDefaulted(in, TIFFTAG_SAMPLESPERPIXEL, &spp);
 	TIFFGetFieldDefaulted(in, TIFFTAG_BITSPERSAMPLE, &bitspersample);
@@ -266,7 +266,7 @@ static int testAndFixParameters(TIFF* in,
 		TIFFSetField(in, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
 	} else if (input_photometric == PHOTOMETRIC_YCBCR) {
 		/* otherwise, can't handle subsampled input */
-		uint16 subsamplinghor, subsamplingver;
+		uint16_t subsamplinghor, subsamplingver;
 
 		TIFFGetFieldDefaulted(in, TIFFTAG_YCBCRSUBSAMPLING,
 				      &subsamplinghor, &subsamplingver);
@@ -280,7 +280,7 @@ static int testAndFixParameters(TIFF* in,
 	if (output_to_jpeg_rather_than_tiff) {
 		*outscanlinesizeinbytes = width * *bytesperpixel;
 	} else {
-		if (defcompression != (uint16) -1)
+		if (defcompression != (uint16_t) -1)
 			TIFFSetField(TIFFout, TIFFTAG_COMPRESSION,
 				defcompression);
 
@@ -312,7 +312,7 @@ static int testAndFixParameters(TIFF* in,
 			    || compression == COMPRESSION_WEBP
 #endif
                         ) {
-			if (defpredictor != (uint16)-1)
+			if (defpredictor != (uint16_t)-1)
 				TIFFSetField(TIFFout, TIFFTAG_PREDICTOR,
 					defpredictor);
 			if (defpreset != -1) {
@@ -337,12 +337,12 @@ static int testAndFixParameters(TIFF* in,
 					PHOTOMETRIC_RGB);
 		}
 
-		/*if (defphotometric != (uint16) -1)
+		/*if (defphotometric != (uint16_t) -1)
 			TIFFSetField(TIFFout, TIFFTAG_PHOTOMETRIC,
 				defphotometric);*/
 
 		if (verbose) {
-			uint16 output_photometric;
+			uint16_t output_photometric;
 			char * pn;
 
 			TIFFGetField(TIFFout, TIFFTAG_PHOTOMETRIC,
@@ -373,19 +373,19 @@ static int testAndFixParameters(TIFF* in,
 static int
 cpTiles2Strip(TIFF* in, void * ambiguous_out,
 	int output_to_jpeg_rather_than_tiff,
-	uint32 xmin, uint32 ymin, uint32 width, uint32 length,
-	uint32 rightpadding, uint32 bottompadding, uint8* paddingbytes,
-	uint32 inimagewidth, uint32 inimagelength,
+	uint32_t xmin, uint32_t ymin, uint32_t width, uint32_t length,
+	uint32_t rightpadding, uint32_t bottompadding, uint8_t* paddingbytes,
+	uint32_t inimagewidth, uint32_t inimagelength,
 	unsigned char * outbuf)
 {
 	struct jpeg_compress_struct * p_cinfo;
 	TIFF* TIFFout;
 	tsize_t inbufsize;
-	uint16 input_compression, bytesperpixel;
-	uint32 intilewidth = (uint32) -1, intilelength = (uint32) -1;
+	uint16_t input_compression, bytesperpixel;
+	uint32_t intilewidth = (uint32_t) -1, intilelength = (uint32_t) -1;
 	tsize_t intilewidthinbytes = TIFFTileRowSize(in);
 	tsize_t outscanlinesizeinbytes;
-	uint32 y;
+	uint32_t y;
 	unsigned char * inbuf, * bufp= outbuf;
 	int error = 0;
 
@@ -414,11 +414,11 @@ cpTiles2Strip(TIFF* in, void * ambiguous_out,
 	}
 
 	for (y = ymin ; y < ymin + length + intilelength ; y += intilelength) {
-		uint32 x, colb = 0;
-		uint32 yminoftile = (y/intilelength) * intilelength;
-		uint32 ymintocopyintile = ymin > yminoftile ? ymin : yminoftile;
-		uint32 ymaxplusone = yminoftile + intilelength;
-		uint32 lengthtocopy, bottompaddingthistile = 0;
+		uint32_t x, colb = 0;
+		uint32_t yminoftile = (y/intilelength) * intilelength;
+		uint32_t ymintocopyintile = ymin > yminoftile ? ymin : yminoftile;
+		uint32_t ymaxplusone = yminoftile + intilelength;
+		uint32_t lengthtocopy, bottompaddingthistile = 0;
 		unsigned char * inbufrow = inbuf +
 		    intilewidthinbytes * (ymintocopyintile - yminoftile);
 
@@ -437,11 +437,11 @@ cpTiles2Strip(TIFF* in, void * ambiguous_out,
 
 		for (x = xmin ; x < xmin + width + intilewidth ;
 		    x += intilewidth) {
-			uint32 xminoftile = (x/intilewidth) * intilewidth;
-			uint32 xmintocopyintile = xmin > xminoftile ?
+			uint32_t xminoftile = (x/intilewidth) * intilewidth;
+			uint32_t xmintocopyintile = xmin > xminoftile ?
 			    xmin : xminoftile;
-			uint32 xmaxplusone = xminoftile + intilewidth;
-			uint32 widthtocopy, rightpaddingthistile = 0;
+			uint32_t xmaxplusone = xminoftile + intilewidth;
+			uint32_t widthtocopy, rightpaddingthistile = 0;
 			tsize_t widthtoreadinbytes, widthtowriteinbytes;
 
 			if (xmaxplusone > xmin + width)
@@ -523,18 +523,18 @@ cpTiles2Strip(TIFF* in, void * ambiguous_out,
 static int
 cpStrips2Strip(TIFF* in, void * ambiguous_out,
 	int output_to_jpeg_rather_than_tiff,
-	uint32 xmin, uint32 ymin, uint32 width, uint32 length,
-	uint32 rightpadding, uint32 bottompadding,
-	unsigned char * outbuf, uint32 * y_of_last_read_scanline,
-	uint32 inimagelength)
+	uint32_t xmin, uint32_t ymin, uint32_t width, uint32_t length,
+	uint32_t rightpadding, uint32_t bottompadding,
+	unsigned char * outbuf, uint32_t * y_of_last_read_scanline,
+	uint32_t inimagelength)
 {
 	struct jpeg_compress_struct * p_cinfo;
 	TIFF* TIFFout;
 	tsize_t inbufsize;
-	uint16 input_compression, bytesperpixel;
+	uint16_t input_compression, bytesperpixel;
 	tsize_t inwidthinbytes = TIFFScanlineSize(in);
 	tsize_t outscanlinesizeinbytes;
-	uint32 y;
+	uint32_t y;
 	unsigned char * inbuf, * bufp= outbuf;
 	int error = 0;
 
@@ -563,7 +563,7 @@ fprintf(stderr, "cpStrips2Strip warning: padding is yet to be implemented\n");
 
 	/* when compression method doesn't support random access: */
 	if (input_compression != COMPRESSION_NONE) {
-		uint32 y;
+		uint32_t y;
 
 		if (*y_of_last_read_scanline > ymin) {
 		/* If we need to go back, finish reading to the end, 
@@ -596,7 +596,7 @@ fprintf(stderr, "cpStrips2Strip warning: padding is yet to be implemented\n");
 
 	for (y = ymin ; y < ymin + length ; y++) {
 		unsigned char * inbufrow = inbuf;
-		uint32 xmintocopyinscanline = xmin;
+		uint32_t xmintocopyinscanline = xmin;
 		tsize_t widthtocopyinbytes = outscanlinesizeinbytes;
 
 		if (TIFFReadScanline(in, inbuf, y, 0) < 0) {
@@ -651,15 +651,15 @@ fprintf(stderr, "cpStrips2Strip warning: padding is yet to be implemented\n");
 
 
 static void
-computeMaxPieceMemorySize(uint32 inimagewidth, uint32 inimagelength,
-	uint16 spp, uint16 bitspersample,
-	uint32 outpiecewidth, uint32 outpiecelength,
-	uint32 overlapinpixels, long double overlapinpercent,
-	uint64 * maxoutmemorysize, uint64 * ourmaxoutmemorysize,
-	uint32 * hnpieces, uint32 * vnpieces,
-	uint32 * hoverlap, uint32 * voverlap)
+computeMaxPieceMemorySize(uint32_t inimagewidth, uint32_t inimagelength,
+	uint16_t spp, uint16_t bitspersample,
+	uint32_t outpiecewidth, uint32_t outpiecelength,
+	uint32_t overlapinpixels, long double overlapinpercent,
+	uint64_t * maxoutmemorysize, uint64_t * ourmaxoutmemorysize,
+	uint32_t * hnpieces, uint32_t * vnpieces,
+	uint32_t * hoverlap, uint32_t * voverlap)
 {
-	uint32 maxpiecewidthwithoverlap, maxpiecelengthwithoverlap;
+	uint32_t maxpiecewidthwithoverlap, maxpiecelengthwithoverlap;
 
 	if (overlapinpercent > 0) {
 		assert(overlapinpixels == 0);
@@ -683,7 +683,7 @@ computeMaxPieceMemorySize(uint32 inimagewidth, uint32 inimagelength,
 	maxpiecelengthwithoverlap= outpiecelength + *voverlap * (
 		*vnpieces >= 3 ? 2 : *vnpieces-1);
 
-	*ourmaxoutmemorysize= (uint64) maxpiecewidthwithoverlap *
+	*ourmaxoutmemorysize= (uint64_t) maxpiecewidthwithoverlap *
 		maxpiecelengthwithoverlap * (bitspersample/8);
 	*maxoutmemorysize= *ourmaxoutmemorysize * (spp == 3 ? 4 : spp);
 	*ourmaxoutmemorysize *= spp;
@@ -715,12 +715,12 @@ static int
 makeMosaicFromTIFFFile(char * infilename)
 {
 	TIFF * in;
-	uint32 inimagewidth, inimagelength, outwidth, outlength;
-	uint32 hoverlap, voverlap;
-	uint32 hnpieces, vnpieces;
-	uint32 ndigitshtilenumber, ndigitsvtilenumber, x, y;
-	uint16 planarconfig, spp, bitspersample, sampleformat;
-	uint64 outmemorysize, ouroutmemorysize;
+	uint32_t inimagewidth, inimagelength, outwidth, outlength;
+	uint32_t hoverlap, voverlap;
+	uint32_t hnpieces, vnpieces;
+	uint32_t ndigitshtilenumber, ndigitsvtilenumber, x, y;
+	uint16_t planarconfig, spp, bitspersample, sampleformat;
+	uint64_t outmemorysize, ouroutmemorysize;
 	char * prefix;
 	unsigned char * outbuf = NULL;
 	int return_code = 0;
@@ -948,16 +948,16 @@ makeMosaicFromTIFFFile(char * infilename)
 		return EXIT_SYNTAX_ERROR;
 	}
 
-	uint16 bytesperpixel= (bitspersample + 7) / 8;
-	uint8 paddingbytes[bytesperpixel * spp];
-	uint16 s;
+	uint16_t bytesperpixel= (bitspersample + 7) / 8;
+	uint8_t paddingbytes[bytesperpixel * spp];
+	uint16_t s;
 	for (s = 0 ; s < spp ; s++) {
 		/* Here we should use sampleformat; instead, we assume 
-		  unsigned integer format uint8 or uint16 or... (rather 
+		  unsigned integer format uint8_t or uint16_t or... (rather 
 		  than e.g. int16 or float) */
 		switch (paddingvalues[s][0]) {
 			case 'M': {
-				uint16 b;
+				uint16_t b;
 				for (b = 0 ; b < bytesperpixel ; b++)
 					paddingbytes[s * bytesperpixel + b]=
 					    0xff;
@@ -966,7 +966,7 @@ makeMosaicFromTIFFFile(char * infilename)
 			default: {
 				unsigned long long u= strtoull(
 				    paddingvalues[s], NULL, 10);
-				uint16 b;
+				uint16_t b;
 				/* Here we should care for endianness ;
 				we write paddingbytes bigendianly */
 				for (b = 0 ; b < bytesperpixel ; b++) {
@@ -981,7 +981,7 @@ makeMosaicFromTIFFFile(char * infilename)
 
 	/*for (s = 0 ; s < spp ; s++) {
 		fprintf(stderr, "[sample %u] %s", s, paddingvalues[s]);
-		uint16 b;
+		uint16_t b;
 		for (b = 0 ; b < bytesperpixel ; b++)
 			fprintf(stderr, " %d", paddingbytes[s * bytesperpixel + b]);
 		fprintf(stderr, "\n");
@@ -996,15 +996,15 @@ makeMosaicFromTIFFFile(char * infilename)
          * 0 to H-1 then 0 to H-1 then... Otherwise (0 to h-1 then 0 to 
          * h-1 then h to 2*h-1 then... with h<H), reading fails. */
 	for (x = 0 ; x < inimagewidth ; x += outwidth) {
-		uint32 outwidthwithoverlap;
-		uint32 y_of_last_read_scanline= 0;
+		uint32_t outwidthwithoverlap;
+		uint32_t y_of_last_read_scanline= 0;
 
-		uint32 leftoverlap = x < hoverlap ? x : hoverlap;
-		uint32 xwithleftoverlap = x - leftoverlap;
+		uint32_t leftoverlap = x < hoverlap ? x : hoverlap;
+		uint32_t xwithleftoverlap = x - leftoverlap;
 
-		uint32 outwidthwithrightoverlap = outwidth + hoverlap;
-		uint32 amountofpaddingatright= 0;
-		uint32 xrightboundary = x + outwidthwithrightoverlap;
+		uint32_t outwidthwithrightoverlap = outwidth + hoverlap;
+		uint32_t amountofpaddingatright= 0;
+		uint32_t xrightboundary = x + outwidthwithrightoverlap;
 		    /* equal to xwithleftoverlap + outwidth + 2*hoverlap */
 		assert(xrightboundary >= x); /* detect overflows */
 		/* At this point the computed right boundary of the
@@ -1045,15 +1045,15 @@ makeMosaicFromTIFFFile(char * infilename)
 		for (y = 0 ; y < inimagelength ; y += outlength) {
 			char * outfilename;
 			void * out; /* TIFF* or FILE* */
-			uint32 outlengthwithoverlap;
+			uint32_t outlengthwithoverlap;
 			int error = 0;
 
-			uint32 topoverlap = y < voverlap ? y : voverlap;
-			uint32 ywithtopoverlap = y - topoverlap;
+			uint32_t topoverlap = y < voverlap ? y : voverlap;
+			uint32_t ywithtopoverlap = y - topoverlap;
 
-			uint32 outlengthwithbottomoverlap= outlength + voverlap;
-			uint32 amountofpaddingatbottom= 0;
-			uint32 ybottomboundary = y + outlengthwithbottomoverlap;
+			uint32_t outlengthwithbottomoverlap= outlength + voverlap;
+			uint32_t amountofpaddingatbottom= 0;
+			uint32_t ybottomboundary = y + outlengthwithbottomoverlap;
 			assert(ybottomboundary >= y); /* detect overflows */
 			if (ybottomboundary > inimagelength) {
 				if (paddinginy)
@@ -1105,11 +1105,11 @@ makeMosaicFromTIFFFile(char * infilename)
 				continue;
 
 			if (quality <= 0) {
-				uint16 in_compression;
+				uint16_t in_compression;
 
 				TIFFGetField(in, TIFFTAG_COMPRESSION, &in_compression);
 				if (in_compression == COMPRESSION_JPEG) {
-					uint16 in_jpegquality;
+					uint16_t in_jpegquality;
 					TIFFGetField(in,
 					    TIFFTAG_JPEGQUALITY,
 					    &in_jpegquality);
@@ -1283,7 +1283,7 @@ static int
 processG3Options(const char* cp)
 {
 	if( (cp = strchr(cp, ':')) ) {
-		if (defg3opts == (uint32) -1)
+		if (defg3opts == (uint32_t) -1)
 			defg3opts = 0;
 		do {
 			cp++;
@@ -1383,12 +1383,12 @@ processCompressOptions(const char* opt)
 
 
 static int
-processPieceGeometryOptions(char* cp, uint32* width, uint32* length)
+processPieceGeometryOptions(char* cp, uint32_t* width, uint32_t* length)
 {
 	while (*cp == ' ')
 		cp++;
 	if (*cp != 'x' && *cp != 'X') {
-		uint32 u= strtoull(cp, &cp, 10);
+		uint32_t u= strtoull(cp, &cp, 10);
 		if (errno)
 			return 0;
 		*width = u;
@@ -1401,7 +1401,7 @@ processPieceGeometryOptions(char* cp, uint32* width, uint32* length)
 	while (*cp == ' ')
 		cp++;
 	if (*cp != 0) {
-		uint32 u= strtoull(cp, &cp, 10);
+		uint32_t u= strtoull(cp, &cp, 10);
 		if (errno)
 			return 0;
 		*length = u;
@@ -1512,7 +1512,7 @@ int main(int argc, char * argv[])
 			}
 		else if (argv[arg][1] == 'M') {
 			long double ld;
-			uint64 ull;
+			uint64_t ull;
 			tsize_t newmosaicpiecesize;
 
 			if (arg+1 >= argc) {
@@ -1528,13 +1528,13 @@ int main(int argc, char * argv[])
 				return EXIT_SYNTAX_ERROR;
 			}
 
-			ull = (uint64) floorl(ld * 1048576);
+			ull = (uint64_t) floorl(ld * 1048576);
 			if (ld == 0) {
 				ull = 0;
 			} else if (ull == 0)
 				ull= 1;
 			newmosaicpiecesize = ull;
-			if ((uint64) newmosaicpiecesize != ull) {
+			if ((uint64_t) newmosaicpiecesize != ull) {
 				/* overflow of tsize_t */
 				if (verbose)
 					fprintf(stderr, "Maximum piece "
@@ -1620,7 +1620,7 @@ int main(int argc, char * argv[])
 				overlapinpercent= ld;
 				overlapinpixels= 0;
 			} else {
-				uint32 u= strtoull(argv[arg], NULL, 10);
+				uint32_t u= strtoull(argv[arg], NULL, 10);
 
 				if (errno) {
 					usage();
