@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([LargeTIFFTools Software], [1.4], [], [largetifftools])
+AC_INIT([LargeTIFFTools Software], [1.4.1], [], [largetifftools])
 AM_INIT_AUTOMAKE
 
 AC_CONFIG_SRCDIR([src])

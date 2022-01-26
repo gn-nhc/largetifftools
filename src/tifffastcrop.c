@@ -1,6 +1,6 @@
 /* tifffastcrop
 
- v. 1.4
+ v. 1.4.1
 
  Copyright (c) 2013-2021 Christophe Deroulers
 
@@ -51,14 +51,14 @@
 #define CopyField3(tag, v1, v2, v3) \
     if (TIFFGetField(in, tag, &v1, &v2, &v3)) TIFFSetField(TIFFout, tag, v1, v2, v3)
 
-static uint32 requestedxmin = 0;
-static uint32 requestedymin = 0;
-static uint32 requestedwidth = 0;
-static uint32 requestedlength = 0;
-static uint64 diroff = 0;
-static uint16 number_of_dirnum_ranges = 0;
-static uint16 * dirnum_ranges_starts = NULL;
-static uint16 * dirnum_ranges_ends = NULL;
+static uint32_t requestedxmin = 0;
+static uint32_t requestedymin = 0;
+static uint32_t requestedwidth = 0;
+static uint32_t requestedlength = 0;
+static uint64_t diroff = 0;
+static uint16_t number_of_dirnum_ranges = 0;
+static uint16_t * dirnum_ranges_starts = NULL;
+static uint16_t * dirnum_ranges_ends = NULL;
 static int verbose = 0;
 
 #define OUTPUT_FORMAT_TIFF 0
@@ -70,14 +70,14 @@ static const char JPEG_SUFFIX[] = "jpg";
 static const char PNG_SUFFIX[] = "png";
 static const char * OUTPUT_SUFFIX[]= {TIFF_SUFFIX, JPEG_SUFFIX, PNG_SUFFIX};
 
-static uint32 defg3opts = (uint32) -1;
+static uint32_t defg3opts = (uint32_t) -1;
 static int jpeg_quality = -1, default_jpeg_quality = 75; /* JPEG quality */
 static int png_quality = -1, default_png_quality = 6; /* PNG quality */
 static int jpegcolormode = JPEGCOLORMODE_RGB;
-static uint16 defcompression = (uint16) -1;
-static uint16 defpredictor = (uint16) -1;
+static uint16_t defcompression = (uint16_t) -1;
+static uint16_t defpredictor = (uint16_t) -1;
 static int defpreset = -1;
-/*static uint16 defphotometric = (uint16) -1;*/
+/*static uint16_t defphotometric = (uint16_t) -1;*/
 
 
 static void my_asprintf(char ** ret, const char * format, ...)
@@ -101,7 +101,7 @@ static void my_asprintf(char ** ret, const char * format, ...)
 }
 
 
-static char * photometricName(uint16 photometric)
+static char * photometricName(uint16_t photometric)
 {
 	char * s= NULL;
 	switch (photometric) {
@@ -122,7 +122,7 @@ static char * photometricName(uint16 photometric)
 }
 
 
-static int searchNumberOfDigits(uint32 u)
+static int searchNumberOfDigits(uint32_t u)
 {
         return snprintf(NULL, 0, "%u", u);
 }
@@ -167,12 +167,12 @@ static const char * searchSuffix(const char * path)
 }
 
 
-static int shouldBeHandled(uint16 dirnum)
+static int shouldBeHandled(uint16_t dirnum)
 {
 	if (number_of_dirnum_ranges == 0)
 		return 1;
 
-	uint16 rn;
+	uint16_t rn;
 	for (rn= 0 ; rn < number_of_dirnum_ranges ; rn++)
 		if (dirnum_ranges_starts[rn] <= dirnum &&
 		    dirnum_ranges_ends[rn] >= dirnum)
@@ -184,10 +184,10 @@ static int shouldBeHandled(uint16 dirnum)
 
 static void tiffCopyFieldsButDimensions(TIFF* in, TIFF* TIFFout)
 {
-	uint16 bitspersample, samplesperpixel, compression, shortv, *shortav;
+	uint16_t bitspersample, samplesperpixel, compression, shortv, *shortav;
 	float floatv;
 	char *stringv;
-	uint32 longv;
+	uint32_t longv;
 
 	CopyField(TIFFTAG_SUBFILETYPE, longv);
 	CopyField(TIFFTAG_BITSPERSAMPLE, bitspersample);
@@ -212,10 +212,10 @@ static void tiffCopyFieldsButDimensions(TIFF* in, TIFF* TIFFout)
 	CopyField(TIFFTAG_TILEDEPTH, longv);
 	CopyField(TIFFTAG_SAMPLEFORMAT, shortv);
 	CopyField2(TIFFTAG_EXTRASAMPLES, shortv, shortav);
-	{ uint16 *red, *green, *blue;
+	{ uint16_t *red, *green, *blue;
 	    CopyField3(TIFFTAG_COLORMAP, red, green, blue);
 	}
-	{ uint16 shortv2;
+	{ uint16_t shortv2;
 	    CopyField2(TIFFTAG_PAGENUMBER, shortv, shortv2);
 	}
 	CopyField(TIFFTAG_ARTIST, stringv);
@@ -231,12 +231,12 @@ static void tiffCopyFieldsButDimensions(TIFF* in, TIFF* TIFFout)
 }
 
 
-static tsize_t computeWidthInBytes(uint32 width_in_pixels, uint16 bitsperpixel)
+static tsize_t computeWidthInBytes(uint32_t width_in_pixels, uint16_t bitsperpixel)
 {
 	if (bitsperpixel % 8 == 0)
 		return (tsize_t) width_in_pixels * (bitsperpixel/8);
 	else if (8 % bitsperpixel == 0) {
-		uint32 pixelsperbyte = 8/bitsperpixel;
+		uint32_t pixelsperbyte = 8/bitsperpixel;
 		return (tsize_t) ((width_in_pixels + pixelsperbyte - 1)/
 			pixelsperbyte);
 	} else
@@ -244,16 +244,16 @@ static tsize_t computeWidthInBytes(uint32 width_in_pixels, uint16 bitsperpixel)
 }
 
 
-static void cpBufToBuf(uint8* out_beginningofline, uint32 out_x,
-	uint8* in_beginningofline, uint32 in_x,
-	uint32 widthtocopyinpixels, uint16 bitsperpixel,
-	uint32 rows, int out_linewidthinbytes, int in_linewidthinbytes)
+static void cpBufToBuf(uint8_t* out_beginningofline, uint32_t out_x,
+	uint8_t* in_beginningofline, uint32_t in_x,
+	uint32_t widthtocopyinsamples, uint16_t bitspersample,
+	uint32_t rows, int out_linewidthinbytes, int in_linewidthinbytes)
 {
-	if (bitsperpixel % 8 == 0) { /* Easy case */
-		uint8* in  = in_beginningofline  + in_x  * (bitsperpixel/8);
-		uint8* out = out_beginningofline + out_x * (bitsperpixel/8);
+	if (bitspersample % 8 == 0) { /* Easy case */
+		uint8_t* in  = in_beginningofline  + in_x  * (bitspersample/8);
+		uint8_t* out = out_beginningofline + out_x * (bitspersample/8);
 		while (rows-- > 0) {
-			memcpy(out, in, widthtocopyinpixels * (bitsperpixel/8));
+			memcpy(out, in, widthtocopyinsamples * (bitspersample/8));
 			in += in_linewidthinbytes;
 			out += out_linewidthinbytes;
 		}
@@ -261,54 +261,54 @@ static void cpBufToBuf(uint8* out_beginningofline, uint32 out_x,
 	}
 
 	/* Hard case. Do computations to prepare steps 1, 2, 3: */
-	static const uint8 left_masks[] =
+	static const uint8_t left_masks[] =
 	    { 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
 
-	assert(8 % bitsperpixel == 0);
-	int pixelsperbyte = 8/bitsperpixel;
+	assert(8 % bitspersample == 0);
+	int samplesperbyte = 8/bitspersample;
 	int out_x_start_whole_outbytes = out_x;
 	int in_x_start_whole_outbytes  = in_x;
-	uint32 in_skew  = in_linewidthinbytes;
-	uint32 out_skew = out_linewidthinbytes;
+	uint32_t in_skew  = in_linewidthinbytes;
+	uint32_t out_skew = out_linewidthinbytes;
 
-	 /* 1. Copy pixels to complete the first byte (if incomplete) of dest. */
-	int out_startpositioninincompletefirstbyte = out_x % pixelsperbyte;
-	int in_startpositioninfirstbyte = in_x % pixelsperbyte;
-	int out_pixelsinincompletefirstbyte = 0;
+	 /* 1. Copy samples to complete the first byte (if incomplete) of dest. */
+	int out_startpositioninincompletefirstbyte = out_x % samplesperbyte;
+	int in_startpositioninfirstbyte = in_x % samplesperbyte;
+	int out_samplesinincompletefirstbyte = 0;
 	int shift_first_inbyte_to_first_incompl_outbyte =
-		out_startpositioninincompletefirstbyte -
-		in_startpositioninfirstbyte;
+		(out_startpositioninincompletefirstbyte -
+		in_startpositioninfirstbyte) * bitspersample;
 	int shift_second_inbyte_to_first_incompl_outbyte = 0;
-	uint8 mask_of_first_inbyte_to_first_incompl_outbyte = 0;
-	uint8 mask_of_second_inbyte_to_first_incompl_outbyte = 0;
+	uint8_t mask_of_first_inbyte_to_first_incompl_outbyte = 0;
+	uint8_t mask_of_second_inbyte_to_first_incompl_outbyte = 0;
 
 	if (out_startpositioninincompletefirstbyte) {
-		out_pixelsinincompletefirstbyte =
-		    8-out_startpositioninincompletefirstbyte;
-		if (out_pixelsinincompletefirstbyte > widthtocopyinpixels)
-			out_pixelsinincompletefirstbyte = widthtocopyinpixels;
-		int pixels_available_in_first_inbyte =
-		    8 - in_startpositioninfirstbyte;
+		out_samplesinincompletefirstbyte =
+		    samplesperbyte - out_startpositioninincompletefirstbyte;
+		if (out_samplesinincompletefirstbyte > widthtocopyinsamples)
+			out_samplesinincompletefirstbyte = widthtocopyinsamples;
+		int samples_available_in_first_inbyte =
+		    samplesperbyte - in_startpositioninfirstbyte;
 
-		if (pixels_available_in_first_inbyte >= out_pixelsinincompletefirstbyte) {
+		if (samples_available_in_first_inbyte >= out_samplesinincompletefirstbyte) {
 			mask_of_first_inbyte_to_first_incompl_outbyte =
-			    left_masks[out_pixelsinincompletefirstbyte * bitsperpixel] >>
-				(in_startpositioninfirstbyte * bitsperpixel);
+			    left_masks[out_samplesinincompletefirstbyte * bitspersample] >>
+				(in_startpositioninfirstbyte * bitspersample);
 		} else {
 			mask_of_first_inbyte_to_first_incompl_outbyte =
-			    left_masks[pixels_available_in_first_inbyte *
-					bitsperpixel] >>
-				(in_startpositioninfirstbyte * bitsperpixel);
+			    left_masks[samples_available_in_first_inbyte *
+					bitspersample] >>
+				(in_startpositioninfirstbyte * bitspersample);
 			mask_of_second_inbyte_to_first_incompl_outbyte =
-			    left_masks[(out_pixelsinincompletefirstbyte -
-				pixels_available_in_first_inbyte) * bitsperpixel];
+			    left_masks[(out_samplesinincompletefirstbyte -
+				samples_available_in_first_inbyte) * bitspersample];
 			shift_second_inbyte_to_first_incompl_outbyte =
-			    pixels_available_in_first_inbyte;
+			    samples_available_in_first_inbyte * bitspersample;
 			in_skew--;
 		}
 
-		in_x_start_whole_outbytes += out_pixelsinincompletefirstbyte;
-		out_x_start_whole_outbytes += out_pixelsinincompletefirstbyte;
+		in_x_start_whole_outbytes += out_samplesinincompletefirstbyte;
+		out_x_start_whole_outbytes += out_samplesinincompletefirstbyte;
 	}
 
 	/* 2. Write as many whole bytes as possible in dest. */
@@ -317,33 +317,33 @@ static void cpBufToBuf(uint8* out_beginningofline, uint32 out_x,
 	  6+2|8|7+1 -> (6+)2|6+2|6+2    17 bits -> 3 bytes, 2 whole bytes
 	   Strategy: copy whole bytes. Then make an additional, 
 	  incomplete byte (which shall have 
-	  out_pixelsinincompletelastbyte pixels) with the remaining (not 
+	  out_samplesinincompletelastbyte samples) with the remaining (not 
 	  yet copied) bits of current byte in input and, if these bits 
 	  are not enough, the first in_bitstoreadinlastbyte bits of next 
 	  byte in input. */
-	uint8* out_wholeoutbytes = out_beginningofline +
-		out_x_start_whole_outbytes / pixelsperbyte;
-	uint8* in = in_beginningofline + in_x / pixelsperbyte;
-	uint32 wholebytesperline =
-	    ((widthtocopyinpixels-out_pixelsinincompletefirstbyte) *
-		bitsperpixel) / 8;
-	int in_bitoffset = (in_x_start_whole_outbytes % pixelsperbyte) * bitsperpixel;
+	uint8_t* out_wholeoutbytes = out_beginningofline +
+		out_x_start_whole_outbytes / samplesperbyte;
+	uint8_t* in = in_beginningofline + in_x / samplesperbyte;
+	uint32_t wholebytesperline =
+	    ((widthtocopyinsamples-out_samplesinincompletefirstbyte) *
+		bitspersample) / 8;
+	int in_bitoffset = (in_x_start_whole_outbytes % samplesperbyte) * bitspersample;
 	if (in_bitoffset) {
 		in_skew -= wholebytesperline + 1;
 		out_skew -= wholebytesperline;
 	}
 
-	/* 3. Copy pixels to complete the last byte (if incomplete) of dest. */
-	int out_pixelsinincompletelastbyte =
-		(out_x + widthtocopyinpixels) % pixelsperbyte;
-	if (out_pixelsinincompletelastbyte) {
+	/* 3. Copy samples to complete the last byte (if incomplete) of dest. */
+	int out_samplesinincompletelastbyte =
+		(out_x + widthtocopyinsamples) % samplesperbyte;
+	if (out_samplesinincompletelastbyte) {
 		if (in_bitoffset == 0)
 			wholebytesperline++; /* Let memcpy start writing last byte */
 		else
 			out_skew--;
 	}
 	int in_bitstoreadinlastbyte =
-	    out_pixelsinincompletelastbyte * bitsperpixel - (8-in_bitoffset);
+	    out_samplesinincompletelastbyte * bitspersample - (8-in_bitoffset);
 	if (in_bitstoreadinlastbyte < 0)
 		in_bitstoreadinlastbyte = 0;
 
@@ -351,7 +351,7 @@ static void cpBufToBuf(uint8* out_beginningofline, uint32 out_x,
 	while (rows-- > 0) {
 		/* 1. */
 		if (out_startpositioninincompletefirstbyte) {
-			uint8 a = (*in) & mask_of_first_inbyte_to_first_incompl_outbyte;
+			uint8_t a = (*in) & mask_of_first_inbyte_to_first_incompl_outbyte;
 			if (shift_first_inbyte_to_first_incompl_outbyte >= 0)
 				a >>= shift_first_inbyte_to_first_incompl_outbyte;
 			else
@@ -362,29 +362,32 @@ static void cpBufToBuf(uint8* out_beginningofline, uint32 out_x,
 				    >> shift_second_inbyte_to_first_incompl_outbyte;
 			}
 
-			*(out_wholeoutbytes-1) &= left_masks[out_startpositioninincompletefirstbyte];
+			*(out_wholeoutbytes-1) &=
+			    left_masks[
+				out_startpositioninincompletefirstbyte *
+				bitspersample];
 			*(out_wholeoutbytes-1) |= a;
 		}
 
 		/* 2. & 3. */
 		if (in_bitoffset == 0) {
 			memcpy(out_wholeoutbytes, in, wholebytesperline);
-			/* out_pixelsinincompletelastbyte =
-			 in_bitstoreadinlastbyte / bitsperpixel in this case */
+			/* out_samplesinincompletelastbyte =
+			 in_bitstoreadinlastbyte / bitspersample in this case */
 			if (in_bitstoreadinlastbyte)
 				*(out_wholeoutbytes + wholebytesperline) |=
 				    (*(in+wholebytesperline))
 				    >> (8-in_bitstoreadinlastbyte);
 		} else {
-			uint32 j = wholebytesperline;
-			uint8 acc = (*in++) << in_bitoffset;
+			uint32_t j = wholebytesperline;
+			uint8_t acc = (*in++) << in_bitoffset;
 
 			while (j-- > 0) {
 				acc |= (*in) >> (8-in_bitoffset);
 				*out_wholeoutbytes++ = acc;
 				acc = (*in++) << in_bitoffset;
 			}
-			if (out_pixelsinincompletelastbyte) {
+			if (out_samplesinincompletelastbyte) {
 				if (in_bitstoreadinlastbyte)
 					acc |= (*in) >> (8-in_bitstoreadinlastbyte);
 				*out_wholeoutbytes++ = acc;
@@ -398,9 +401,9 @@ static void cpBufToBuf(uint8* out_beginningofline, uint32 out_x,
 
 
 static int testAndFixInTIFFPhotoAndCompressionParameters(TIFF* in,
-	uint16* input_compression)
+	uint16_t* input_compression)
 {
-	uint16 bitspersample, input_photometric;
+	uint16_t bitspersample, input_photometric;
 
 	TIFFGetFieldDefaulted(in, TIFFTAG_BITSPERSAMPLE, &bitspersample);
 
@@ -421,7 +424,7 @@ static int testAndFixInTIFFPhotoAndCompressionParameters(TIFF* in,
 		TIFFSetField(in, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
 	} else if (input_photometric == PHOTOMETRIC_YCBCR) {
 		/* Otherwise, can't handle subsampled input */
-		uint16 subsamplinghor, subsamplingver;
+		uint16_t subsamplinghor, subsamplingver;
 
 		TIFFGetFieldDefaulted(in, TIFFTAG_YCBCRSUBSAMPLING,
 				      &subsamplinghor, &subsamplingver);
@@ -439,13 +442,13 @@ static int testAndFixInTIFFPhotoAndCompressionParameters(TIFF* in,
 static int testAndFixOutTIFFPhotoAndCompressionParameters(TIFF* in,
 	TIFF* TIFFout)
 {
-	uint16 input_photometric, input_compression, compression, spp;
+	uint16_t input_photometric, input_compression, compression, spp;
 
 	TIFFGetFieldDefaulted(in, TIFFTAG_SAMPLESPERPIXEL, &spp);
 	TIFFGetFieldDefaulted(in, TIFFTAG_COMPRESSION, &input_compression);
 	TIFFGetFieldDefaulted(in, TIFFTAG_PHOTOMETRIC, &input_photometric);
 
-	if (defcompression != (uint16) -1)
+	if (defcompression != (uint16_t) -1)
 		TIFFSetField(TIFFout, TIFFTAG_COMPRESSION, defcompression);
 
 	TIFFGetField(TIFFout, TIFFTAG_COMPRESSION, &compression);
@@ -476,7 +479,7 @@ static int testAndFixOutTIFFPhotoAndCompressionParameters(TIFF* in,
 		    || compression == COMPRESSION_WEBP
 #endif
                         ) {
-		if (defpredictor != (uint16)-1)
+		if (defpredictor != (uint16_t)-1)
 			TIFFSetField(TIFFout, TIFFTAG_PREDICTOR,
 				defpredictor);
 		if (defpreset != -1) {
@@ -500,7 +503,7 @@ static int testAndFixOutTIFFPhotoAndCompressionParameters(TIFF* in,
 				PHOTOMETRIC_RGB);
 	} else if (compression == COMPRESSION_CCITTFAX3 ||
 		   compression == COMPRESSION_CCITTFAX4) {
-		uint32 longv;
+		uint32_t longv;
 		char *stringv;
 		if (compression == COMPRESSION_CCITTFAX3 &&
 		    input_compression == COMPRESSION_CCITTFAX3)
@@ -516,12 +519,12 @@ static int testAndFixOutTIFFPhotoAndCompressionParameters(TIFF* in,
 		CopyField(TIFFTAG_FAXSUBADDRESS, stringv);
 	}
 
-	/*if (defphotometric != (uint16) -1)
+	/*if (defphotometric != (uint16_t) -1)
 		TIFFSetField(TIFFout, TIFFTAG_PHOTOMETRIC,
 			defphotometric);*/
 
 	if (verbose) {
-		uint16 output_photometric;
+		uint16_t output_photometric;
 		char * pn;
 
 		TIFFGetField(TIFFout, TIFFTAG_PHOTOMETRIC,
@@ -539,14 +542,15 @@ static int testAndFixOutTIFFPhotoAndCompressionParameters(TIFF* in,
 }
 
 
-static int cpTiles2Strip(TIFF* in, uint32 xmin, uint32 ymin,
-	uint32 width, uint32 length, unsigned char * outbuf,
-	tsize_t outscanlinesizeinbytes, uint16 bitsperpixel)
+static int cpTiles2Strip(TIFF* in, uint32_t xmin, uint32_t ymin,
+	uint32_t width, uint32_t length, unsigned char * outbuf,
+	tsize_t outscanlinesizeinbytes, uint16_t bitspersample,
+	uint16_t samplesperpixel)
 {
 	tmsize_t inbufsize;
-	uint32 intilewidth = (uint32) -1, intilelength = (uint32) -1;
+	uint32_t intilewidth = (uint32_t) -1, intilelength = (uint32_t) -1;
 	tsize_t intilewidthinbytes = TIFFTileRowSize(in);
-	uint32 y;
+	uint32_t y;
 	unsigned char * inbuf, * bufp= outbuf;
 	int error = 0;
 
@@ -563,11 +567,11 @@ static int cpTiles2Strip(TIFF* in, uint32 xmin, uint32 ymin,
 	}
 
 	for (y = ymin ; y < ymin + length + intilelength ; y += intilelength) {
-		uint32 x, out_x = 0;
-		uint32 yminoftile = (y/intilelength) * intilelength;
-		uint32 ymintocopy = ymin > yminoftile ? ymin : yminoftile;
-		uint32 ymaxplusone = yminoftile + intilelength;
-		uint32 lengthtocopy;
+		uint32_t x, out_x = 0;
+		uint32_t yminoftile = (y/intilelength) * intilelength;
+		uint32_t ymintocopy = ymin > yminoftile ? ymin : yminoftile;
+		uint32_t ymaxplusone = yminoftile + intilelength;
+		uint32_t lengthtocopy;
 		unsigned char * inbufrow = inbuf +
 		    intilewidthinbytes * (ymintocopy-yminoftile);
 
@@ -579,17 +583,17 @@ static int cpTiles2Strip(TIFF* in, uint32 xmin, uint32 ymin,
 
 		for (x = xmin ; x < xmin + width + intilewidth ;
 		    x += intilewidth) {
-			uint32 xminoftile = (x/intilewidth) * intilewidth;
-			uint32 xmintocopyintile = xmin > xminoftile ?
+			uint32_t xminoftile = (x/intilewidth) * intilewidth;
+			uint32_t xmintocopyintile = xmin > xminoftile ?
 			    xmin : xminoftile;
-			uint32 xmaxplusone = xminoftile + intilewidth;
+			uint32_t xmaxplusone = xminoftile + intilewidth;
 
 			if (xmaxplusone > xmin + width)
 				xmaxplusone = xmin + width;
 			if (xmaxplusone <= xminoftile)
 				break;
 
-			uint32 widthtocopyinpixels =
+			uint32_t widthtocopyinpixels =
 			    xmaxplusone - xmintocopyintile;
 
 			if (TIFFReadTile(in, inbuf, xminoftile,
@@ -602,9 +606,10 @@ static int cpTiles2Strip(TIFF* in, uint32 xmin, uint32 ymin,
 				goto done;
 			}
 
-			cpBufToBuf(bufp, out_x, inbufrow,
-			    xmintocopyintile-xminoftile,
-			    widthtocopyinpixels, bitsperpixel,
+			cpBufToBuf(bufp, out_x * samplesperpixel, inbufrow,
+			    (xmintocopyintile-xminoftile) * samplesperpixel,
+			    widthtocopyinpixels * samplesperpixel,
+			    bitspersample,
 			    lengthtocopy, outscanlinesizeinbytes,
 			    intilewidthinbytes);
 			out_x += widthtocopyinpixels;
@@ -618,15 +623,15 @@ static int cpTiles2Strip(TIFF* in, uint32 xmin, uint32 ymin,
 }
 
 static int cpStrips2Strip(TIFF* in,
-	uint32 xmin, uint32 ymin, uint32 width, uint32 length,
+	uint32_t xmin, uint32_t ymin, uint32_t width, uint32_t length,
 	unsigned char * outbuf, tsize_t outscanlinesizeinbytes,
-	uint16 bitsperpixel,
-	uint32 * y_of_last_read_scanline, uint32 inimagelength)
+	uint16_t bitspersample, uint16_t samplesperpixel,
+	uint32_t * y_of_last_read_scanline, uint32_t inimagelength)
 {
 	tsize_t inbufsize;
-	uint16 input_compression;
+	uint16_t input_compression;
 	tsize_t inwidthinbytes = TIFFScanlineSize(in);
-	uint32 y;
+	uint32_t y;
 	unsigned char * inbuf, * bufp= outbuf;
 	int error = 0;
 
@@ -642,7 +647,7 @@ static int cpStrips2Strip(TIFF* in,
 
 	/* When compression method doesn't support random access: */
 	if (input_compression != COMPRESSION_NONE) {
-		uint32 y;
+		uint32_t y;
 
 		if (*y_of_last_read_scanline > ymin) {
 		/* If we need to go back, finish reading to the end, 
@@ -674,7 +679,7 @@ static int cpStrips2Strip(TIFF* in,
 	}
 
 	for (y = ymin ; y < ymin + length ; y++) {
-		uint32 xmintocopyinscanline = xmin;
+		uint32_t xmintocopyinscanline = xmin;
 
 		if (TIFFReadScanline(in, inbuf, y, 0) < 0) {
 			TIFFError(TIFFFileName(in),
@@ -685,8 +690,9 @@ static int cpStrips2Strip(TIFF* in,
 		} else
 			*y_of_last_read_scanline= y;
 
-		cpBufToBuf(bufp, 0, inbuf, xmintocopyinscanline,
-		    requestedwidth, bitsperpixel, 1,
+		cpBufToBuf(bufp, 0, inbuf,
+		    xmintocopyinscanline * samplesperpixel,
+		    requestedwidth * samplesperpixel, bitspersample, 1,
 		    outscanlinesizeinbytes, inwidthinbytes);
 		bufp += outscanlinesizeinbytes;
 	}
@@ -698,21 +704,21 @@ static int cpStrips2Strip(TIFF* in,
 
 
 	/* Return 0 if the requested memory size exceeds the machine's
-	  addressing size type (size_t) capacity or if biptspersample is
+	  addressing size type (size_t) capacity or if bitspersample is
 	  unhandled */
-static size_t computeMemorySize(uint16 spp, uint16 bitspersample,
-	uint32 outwidth, uint32 outlength)
+static size_t computeMemorySize(uint16_t spp, uint16_t bitspersample,
+	uint32_t outwidth, uint32_t outlength)
 {
-	uint16 bitsperpixel = spp * bitspersample;
-	uint64 memorysize = outlength;
+	uint16_t bitsperpixel = spp * bitspersample;
+	uint64_t memorysize = outlength;
 	if (bitsperpixel % 8 == 0)
-		memorysize *= (uint64) outwidth * (bitsperpixel/8);
-	else if (8 % bitsperpixel == 0) {
+		memorysize *= (uint64_t) outwidth * (bitsperpixel/8);
+	else /*if (8 % bitsperpixel == 0)*/ {
 		int pixelsperbyte = 8/bitsperpixel;
-		int bytesperrow = (outwidth + pixelsperbyte - 1)/pixelsperbyte;
+		int bytesperrow = (outwidth * bitsperpixel + 7) / 8;
 		memorysize *= bytesperrow;
-	} else
-		return 0;
+	} /*else
+		return 0;*/
 
 	if ((size_t) memorysize != memorysize)
 		return 0;
@@ -721,17 +727,17 @@ static size_t computeMemorySize(uint16 spp, uint16 bitspersample,
 
 
 static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
-        uint64 diroff, uint16 dirnum, uint16 numberdirs,
+        uint64_t diroff, uint16_t dirnum, uint16_t numberdirs,
         const char * outfilename)
 {
-	uint32 inimagewidth, inimagelength;
-	uint32 outwidth = 0, outlength = 0;
-	uint16 planarconfig, spp, bitspersample;
+	uint32_t inimagewidth, inimagelength;
+	uint32_t outwidth = 0, outlength = 0;
+	uint16_t planarconfig, spp, bitspersample;
 	size_t outmemorysize;
 	char * ouroutfilename = NULL;
 	unsigned char * outbuf = NULL;
 	void * out; /* TIFF* or FILE* */
-	uint32 y_of_last_read_scanline = 0;
+	uint32_t y_of_last_read_scanline = 0;
 	int return_code = 0; /* Success */
 
 	TIFFGetField(in, TIFFTAG_IMAGEWIDTH, &inimagewidth);
@@ -800,9 +806,9 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 		fprintf(stderr, "File \"%s\", directory %u has %u bits per sample and %u samples per pixel.\n",
 			infilename, dirnum, (unsigned) bitspersample, (unsigned) spp);
 
-	if (requestedwidth == (uint32) -1)
+	if (requestedwidth == (uint32_t) -1)
 		requestedwidth = inimagewidth - requestedxmin;
-	if (requestedlength == (uint32) -1)
+	if (requestedlength == (uint32_t) -1)
 		requestedlength = inimagelength - requestedymin;
 	if (verbose)
 		fprintf(stderr, "Requested rectangle: " UINT32_FORMAT
@@ -858,7 +864,7 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 	char * prefix = searchPrefixBeforeLastDot(outfilename != NULL ?
 			    outfilename : infilename);
 	if (outfilename == NULL || diroff || numberdirs > 1) {
-		uint32 ndigitsx = searchNumberOfDigits(inimagewidth),
+		uint32_t ndigitsx = searchNumberOfDigits(inimagewidth),
 		    ndigitsy = searchNumberOfDigits(inimagelength);
 		if (diroff)
 			my_asprintf(&ouroutfilename, "%s-d0x" UINT64_HEX_FORMAT "-%0*u-%0*u-%0*ux%0*u.%s",
@@ -867,7 +873,7 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 			    requestedwidth, ndigitsy, requestedlength,
 			    OUTPUT_SUFFIX[output_format]);
 		else if (numberdirs > 1) {
-			uint32 ndigitsdirnum = searchNumberOfDigits(numberdirs);
+			uint32_t ndigitsdirnum = searchNumberOfDigits(numberdirs);
 			my_asprintf(&ouroutfilename, "%s-d%0*u-%0*u-%0*u-%0*ux%0*u.%s",
 			    prefix, ndigitsdirnum, dirnum,
 			    ndigitsx, requestedxmin,
@@ -906,13 +912,13 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 		return EXIT_IO_ERROR;
 
 	{
-		uint16 in_compression;
+		uint16_t in_compression;
 		testAndFixInTIFFPhotoAndCompressionParameters(in,
 		    &in_compression);
 
 		if (jpeg_quality <= 0) {
 			if (in_compression == COMPRESSION_JPEG) {
-				uint16 in_jpegquality;
+				uint16_t in_jpegquality;
 				TIFFGetField(in, TIFFTAG_JPEGQUALITY, &in_jpegquality);
 				jpeg_quality = in_jpegquality;
 			} else
@@ -927,9 +933,9 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 		{
 		struct jpeg_compress_struct cinfo;
 		struct jpeg_error_mgr jerr;
-		uint16 bytesperpixel = (bitspersample/8) * spp;
+		uint16_t bitsperpixel = bitspersample * spp;
 		tsize_t outscanlinesizeinbytes =
-		    requestedwidth * bytesperpixel;
+		    (requestedwidth * bitsperpixel + 7) / 8;
 		int error = 0;
 
 		cinfo.err = jpeg_std_error(&jerr);
@@ -951,18 +957,20 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 		      !(error = cpTiles2Strip(in,
 			    requestedxmin, requestedymin,
 			    requestedwidth, requestedlength,
-			    outbuf, outscanlinesizeinbytes, bytesperpixel * 8))) ||
+			    outbuf, outscanlinesizeinbytes,
+			    bitspersample, spp))) ||
 		     (!TIFFIsTiled(in) &&
 		      !(error = cpStrips2Strip(in,
 			    requestedxmin, requestedymin,
 			    requestedwidth, requestedlength,
-			    outbuf, outscanlinesizeinbytes, bytesperpixel * 8,
+			    outbuf, outscanlinesizeinbytes,
+			    bitspersample, spp,
 			    &y_of_last_read_scanline,
 			    inimagelength))))) {
 			if (verbose)
 				fprintf(stderr, "Extract prepared.\n");
 
-			uint32 y;
+			uint32_t y;
 			JSAMPROW row_pointer;
 			JSAMPROW* row_pointers =
 				malloc(requestedlength * sizeof(JSAMPROW));
@@ -975,7 +983,7 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 			}
 
 			for (y = 0, row_pointer = outbuf ; y < requestedlength ;
-			    y++, row_pointer += requestedwidth * bytesperpixel)
+			    y++, row_pointer += outscanlinesizeinbytes)
 				row_pointers[y]= row_pointer;
 
 			jpeg_write_scanlines(&cinfo, row_pointers, requestedlength);
@@ -994,7 +1002,7 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 #ifdef HAVE_PNG
 	case OUTPUT_FORMAT_PNG:
 		{
-		uint16 bitsperpixel = bitspersample * spp;
+		uint16_t bitsperpixel = bitspersample * spp;
 		tsize_t outscanlinesizeinbytes = computeWidthInBytes(
 		    requestedwidth, bitsperpixel);
 		int error = 0;
@@ -1056,20 +1064,20 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 			    requestedxmin, requestedymin,
 			    requestedwidth, requestedlength,
 			    outbuf, outscanlinesizeinbytes,
-			    bitsperpixel))) ||
+			    bitspersample, spp))) ||
 		     (!TIFFIsTiled(in) &&
 		      !(error = cpStrips2Strip(in,
 			    requestedxmin, requestedymin,
 			    requestedwidth, requestedlength,
 			    outbuf, outscanlinesizeinbytes,
-			    bitsperpixel,
+			    bitspersample, spp,
 			    &y_of_last_read_scanline,
 			    inimagelength))))) {
 			if (verbose)
 				fprintf(stderr, "Extract prepared.\n");
 
 			png_const_bytep row_pointer = outbuf;
-			uint32 y;
+			uint32_t y;
 			for (y = 0 ; y < requestedlength ;
 			    y++, row_pointer += outscanlinesizeinbytes)
 				png_write_row(png_ptr, row_pointer);
@@ -1086,7 +1094,7 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 
 	case OUTPUT_FORMAT_TIFF:
 		{
-		uint16 bitsperpixel = bitspersample * spp;
+		uint16_t bitsperpixel = bitspersample * spp;
 		tsize_t outscanlinesizeinbytes;
 		int error = 0;
 
@@ -1103,12 +1111,13 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 		if (((TIFFIsTiled(in) &&
 		      !(error = cpTiles2Strip(in, requestedxmin,
 			requestedymin, requestedwidth, requestedlength,
-			outbuf, outscanlinesizeinbytes, bitsperpixel))) ||
+			outbuf, outscanlinesizeinbytes, bitspersample,
+			spp))) ||
 		     (!TIFFIsTiled(in) &&
 		      !(error = cpStrips2Strip(in, requestedxmin,
 			requestedymin, requestedwidth, requestedlength,
-			outbuf, outscanlinesizeinbytes, bitsperpixel,
-			&y_of_last_read_scanline,
+			outbuf, outscanlinesizeinbytes,
+			bitspersample, spp, &y_of_last_read_scanline,
 			inimagelength))))) {
 			if (verbose)
 				fprintf(stderr, "Extract prepared.\n");
@@ -1175,13 +1184,13 @@ static int makeExtractFromTIFFFile(const char * infilename,
 			makeExtractFromTIFFDirectory(infilename, in,
 			    0, 0, 1, outfilename);
 	} else {
-		uint16 numberofdirectories= TIFFNumberOfDirectories(in);
+		uint16_t numberofdirectories= TIFFNumberOfDirectories(in);
 
 		if (verbose)
 			fprintf(stderr, "File \"%s\" has %u directories.\n",
 			    infilename, numberofdirectories);
 
-		uint16 curdir= 0;
+		uint16_t curdir= 0;
 		do {
 			if (shouldBeHandled(curdir))
 				makeExtractFromTIFFDirectory(infilename, in,
@@ -1247,7 +1256,7 @@ static int processZIPOptions(char* cp)
 static int processG3Options(char* cp)
 {
 	if( (cp = strchr(cp, ':')) ) {
-		if (defg3opts == (uint32) -1)
+		if (defg3opts == (uint32_t) -1)
 			defg3opts = 0;
 		do {
 			cp++;
@@ -1362,9 +1371,9 @@ static int processExtractGeometryOptions(char* cp)
 static unsigned parseDirnumRanges(const char* c, int dryrun)
 {
 	const char* c_depart = c;
-	uint16 number_of_read_ranges = 0;
-	uint16 debut_de_plage_courante = 0;
-	uint16 fin_de_plage_courante = (uint16) -1;
+	uint16_t number_of_read_ranges = 0;
+	uint16_t debut_de_plage_courante = 0;
+	uint16_t fin_de_plage_courante = (uint16_t) -1;
 	int separateur_debut_fin_vu = 0, premier_nombre_lu = 0,
 	    fin_de_la_chaine = 0;
 
@@ -1385,7 +1394,7 @@ static unsigned parseDirnumRanges(const char* c, int dryrun)
 			number_of_read_ranges++;
 			}
 		debut_de_plage_courante = 0;
-		fin_de_plage_courante = (uint16) -1;
+		fin_de_plage_courante = (uint16_t) -1;
 		separateur_debut_fin_vu = 0;
 		premier_nombre_lu = 0;
 		continue;
@@ -1426,7 +1435,7 @@ static unsigned parseDirnumRanges(const char* c, int dryrun)
    multiple lists of ranges on command line) */
 static int processDirnumRangesOption(const char* cp)
 {
-	uint16 number_of_read_ranges = parseDirnumRanges(cp, 1);
+	uint16_t number_of_read_ranges = parseDirnumRanges(cp, 1);
 
 	if (number_of_read_ranges == 0) {
 		fprintf(stderr, "Expected argument to -d option: non empty list of directory number ranges \"%s\".\n",
