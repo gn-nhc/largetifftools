@@ -18,6 +18,7 @@
 #include <stdlib.h> /* exit, strtoul */
 #include <string.h>
 #include <strings.h> /* strncasecmp */
+#include <stdint.h>
 #include <assert.h>
 #include <errno.h>
 #include <tiff.h>
