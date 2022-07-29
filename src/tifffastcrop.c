@@ -17,6 +17,7 @@
 #include <stdlib.h> /* exit, strtoul */
 #include <string.h>
 #include <strings.h> /* strncasecmp */
+#include <stdint.h>
 #include <ctype.h> /* isdigit */
 #include <assert.h>
 #include <errno.h>
