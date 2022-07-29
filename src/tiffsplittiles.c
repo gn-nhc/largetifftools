@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* exit */
 #include <string.h>
+#include <stdint.h>
 #include <tiff.h>
 #include <tiffio.h>
 
